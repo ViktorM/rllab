@@ -15,7 +15,7 @@ policy = GaussianLSTMPolicy(
     name="policy",
     env_spec=env.spec,
     lstm_layer_cls=L.TfBasicLSTMLayer,
-    # gru_layer_cls=L.GRULayer,
+ #   gru_layer_cls=L.GRULayer,
 )
 
 baseline = LinearFeatureBaseline(env_spec=env.spec)
@@ -26,9 +26,10 @@ algo = TRPO(
     baseline=baseline,
     batch_size=4000,
     max_path_length=100,
-    n_itr=10,
+    n_itr=40,
     discount=0.99,
     step_size=0.01,
+    plot=True,
     optimizer=ConjugateGradientOptimizer(hvp_approach=FiniteDifferenceHvp(base_eps=1e-5))
 )
 algo.train()

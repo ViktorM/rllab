@@ -25,6 +25,7 @@ algo = VPG(
     max_path_length=100,
     n_itr=40,
     discount=0.99,
+    plot=True,
     optimizer_args=dict(
         tf_optimizer_args=dict(
             learning_rate=0.01,
