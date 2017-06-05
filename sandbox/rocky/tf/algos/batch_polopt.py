@@ -2,7 +2,6 @@ import time
 import numpy as np
 from rllab.algos.base import RLAlgorithm
 import rllab.misc.logger as logger
-import rllab.plotter as plotter
 from sandbox.rocky.tf.policies.base import Policy
 import tensorflow as tf
 from sandbox.rocky.tf.samplers.batch_sampler import BatchSampler
@@ -12,6 +11,8 @@ from rllab.misc import ext
 from rllab.core.serializable import Serializable
 from sandbox.rocky.tf.misc import tensor_utils
 from sandbox.rocky.tf.optimizers.first_order_optimizer import FirstOrderOptimizer
+
+import pickle as pickle
 
 from rllab.sampler.utils import rollout
 
@@ -158,9 +159,6 @@ class BatchPolopt(RLAlgorithm):
 
     def start_worker(self):
         self.sampler.start_worker()
-        if self.plot:
-            print("Init plot")
-            plotter.init_plot(self.env, self.policy)
 
     def shutdown_worker(self):
         self.sampler.shutdown_worker()
@@ -227,8 +225,7 @@ class BatchPolopt(RLAlgorithm):
                 logger.record_tabular('ItrTime', time.time() - itr_start_time)
                 logger.dump_tabular(with_prefix=False)
                 if self.plot:
-       #             rollout(self.env, self.policy, animated=True, max_path_length=self.max_path_length)
-                    self.update_plot()
+                    rollout(self.env, self.policy, animated=True, max_path_length=self.max_path_length)
                     if self.pause_for_plot:
                         input("Plotting evaluation run: Press Enter to "
                               "continue...")
@@ -263,6 +260,9 @@ class BatchPolopt(RLAlgorithm):
         )
 
         target_qf = Serializable.clone(self.qf, name="target_qf")
+  #      with tf.variable_scope("target_q"):
+  #          with suppress_params_loading():
+  #         target_qf = pickle.loads(pickle.dumps(self.qf))
 
         # y need to be computed first
         obs = self.env.observation_space.new_tensor_variable(
@@ -377,8 +377,3 @@ class BatchPolopt(RLAlgorithm):
         self.qf_loss_averages.append(qf_loss)
         self.q_averages.append(qval)
         self.y_averages.append(ys)
-
-    def update_plot(self):
-        if self.plot:
-            plotter.update_plot(self.policy, self.max_path_length)
-

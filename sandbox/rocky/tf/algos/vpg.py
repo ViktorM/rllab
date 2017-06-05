@@ -1,5 +1,3 @@
-
-
 from rllab.misc import logger
 from rllab.misc import ext
 from rllab.misc.overrides import overrides
@@ -95,6 +93,36 @@ class VPG(BatchPolopt, Serializable):
 
         self.optimizer.update_opt(loss=surr_obj, target=self.policy, inputs=input_list)
 
+        vars_info = {
+            "mean_kl": mean_kl,
+            "input_list": input_list,
+            "obs_var": obs_var,
+            "action_var": action_var,
+            "advantage_var": advantage_var,
+            "surr_loss": surr_obj,
+            "dist_info_vars": dist_info_vars,
+            "lr": logli,
+        }
+
+        if self.qprop:
+            eta_var = tensor_utils.new_tensor(
+                'eta',
+                ndim=1 + is_recurrent,
+                dtype=tf.float32,
+            )
+            qbaseline_info = self.qf_baseline.get_qbaseline_sim(
+                vars_info["obs_var"], scale_reward=self.scale_reward)
+            qprop_surr_loss = - tf.reduce_mean(vars_info["lr"] *
+                vars_info["advantage_var"]) - tf.reduce_mean(
+                qbaseline_info["qvalue"] * eta_var)
+            input_list += [eta_var]
+            self.qprop_optimizer.update_opt(
+                loss=qprop_surr_loss,
+                target=self.policy,
+                inputs=input_list,
+            )
+            self.init_opt_critic(vars_info=vars_info, qbaseline_info=qbaseline_info)
+
         f_kl = tensor_utils.compile_function(
             inputs=input_list + old_dist_info_vars_list,
             outputs=[mean_kl, max_kl],
@@ -114,7 +142,14 @@ class VPG(BatchPolopt, Serializable):
         state_info_list = [agent_infos[k] for k in self.policy.state_info_keys]
         inputs += tuple(state_info_list)
         if self.policy.recurrent:
-            inputs += (samples_data["valids"],)
+            inputs += (samples_data["valids"],)              
+        if self.qprop and self.qprop_enable:
+            optimizer = self.qprop_optimizer
+            inputs += (samples_data["etas"], )
+            logger.log("Using Qprop optimizer")
+        else:
+            optimizer = self.optimizer
+
         dist_info_list = [agent_infos[k] for k in self.policy.distribution.dist_info_keys]
         loss_before = self.optimizer.loss(inputs)
         self.optimizer.optimize(inputs)
