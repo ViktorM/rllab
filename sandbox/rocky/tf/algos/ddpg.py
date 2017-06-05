@@ -127,8 +127,6 @@ class DDPG(RLAlgorithm):
 
     def start_worker(self):
         parallel_sampler.populate_task(self.env, self.policy)
-        if self.plot:
-            plotter.init_plot(self.env, self.policy)
 
     @overrides
     def train(self):
@@ -215,7 +213,7 @@ class DDPG(RLAlgorithm):
                 logger.dump_tabular(with_prefix=False)
                 logger.pop_prefix()
                 if self.plot:
-                    self.update_plot()
+                    rollout(self.env, self.policy, animated=True, max_path_length=self.max_path_length)
                     if self.pause_for_plot:
                         input("Plotting evaluation run: Press Enter to "
                                   "continue...")
@@ -404,10 +402,6 @@ class DDPG(RLAlgorithm):
         self.q_averages = []
         self.y_averages = []
         self.es_path_returns = []
-
-    def update_plot(self):
-        if self.plot:
-            plotter.update_plot(self.policy, self.max_path_length)
 
     def get_epoch_snapshot(self, epoch):
         return dict(
