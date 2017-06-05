@@ -3,7 +3,6 @@ from rllab.misc.overrides import overrides
 from rllab.misc import special2 as special
 from sandbox.rocky.tf.misc import tensor_utils
 from rllab.sampler import parallel_sampler
-from rllab.plotter import plotter
 from rllab.misc import ext
 import rllab.misc.logger as logger
 import pickle as pickle
@@ -151,10 +150,10 @@ class DDPG(RLAlgorithm):
             initial = False
             observation = self.env.reset()
 
-            with tf.variable_scope("sample_policy"):
+          #  with tf.variable_scope("sample_policy"):
           #      with suppress_params_loading():
-                sample_policy = pickle.loads(pickle.dumps(self.policy))
-         #   sample_policy = Serializable.clone(self.policy, name="sample_policy")
+          #      sample_policy = pickle.loads(pickle.dumps(self.policy))
+            sample_policy = Serializable.clone(self.policy, name="sample_policy")
 
             for epoch in range(self.n_epochs):
                 logger.push_prefix('epoch #%d | ' % epoch)

@@ -259,10 +259,10 @@ class BatchPolopt(RLAlgorithm):
             outputs=[control_variate, qbaseline_info["qprime"]],
         )
 
-        target_qf = Serializable.clone(self.qf, name="target_qf")
-  #      with tf.variable_scope("target_q"):
+  #      target_qf = Serializable.clone(self.qf, name="target_qf")
+        with tf.variable_scope("target_q"):
   #          with suppress_params_loading():
-  #         target_qf = pickle.loads(pickle.dumps(self.qf))
+           target_qf = pickle.loads(pickle.dumps(self.qf))
 
         # y need to be computed first
         obs = self.env.observation_space.new_tensor_variable(
